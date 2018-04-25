@@ -35,10 +35,15 @@ BASE_URL = "https://en.pathe.nl/cinema/schedules"
 # ?cinemaId=9&date=26-04-2018
 
 def parse_movie_html(html):
-    movies = []
+    movies = {}
     soup = BeautifulSoup(html, 'html.parser')
-    for link in soup.select('h4 > a'):
-        movies.append(link.get('title'))
+    for movie in soup.select('.schedule-simple__item'):
+        link = movie.select_one('h4 > a')
+        title = link.get('title')
+        time_slots = []
+        for start_time in movie.select('.schedule-time__start'):
+            time_slots.append(start_time.text)
+        movies[title] = time_slots
     return movies
 
 def get_movies(cinema_id, date):
@@ -47,7 +52,14 @@ def get_movies(cinema_id, date):
     return movies
 
 def pretty_print_movies(movies):
-    return '\n'.join([ m for m in movies if 'Nederlandse' not in m])
+    descriptions = []
+    for movie_title, time_slots in movies.items():
+        if 'Nederlandse' in movie_title:
+            continue
+        descriptions.append(movie_title)
+        descriptions.append("\t" + " ".join(time_slots))
+
+    return '\n'.join(descriptions)
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
